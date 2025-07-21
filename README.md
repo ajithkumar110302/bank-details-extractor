@@ -7,7 +7,8 @@ A simple React web application that allows users to upload an Excel file contain
 ## ✨ Features
 
 - Upload `.xlsx` or `.xls` Excel files.
-- Parses IFSC codes from a column named **"Remitter IFSC"**.
+- Input any column name that contains IFSC codes (e.g., `Remitter IFSC`, `IFSC`, etc.).
+- Validates if the provided column exists in the Excel file.
 - Fetches bank details (bank name, branch, address, etc.) using the Razorpay IFSC API.
 - Displays enriched data in a paginated table (10 records per page).
 - Allows downloading of enriched results as a new Excel file.
@@ -16,4 +17,6 @@ A simple React web application that allows users to upload an Excel file contain
 
 ## 📁 File Format Requirements
 
-Your Excel file must contain a column titled: Remitter IFSCs
+You can specify **any column name** that contains IFSC codes.  
+Before parsing, the app will check if that column exists in the uploaded file.  
+If the column is missing, you'll see an error like:

@@ -9,12 +9,15 @@ function App() {
   const [enrichedData, setEnrichedData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [inputFileName, setInputFileName] = useState(null);
+  const [ifscColumnName, setIfscColumnName] = useState("Remitter IFSC");
+  const [columnError, setColumnError] = useState("");
 
   const itemsPerPage = 10;
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     setInputFileName(file?.name || null);
+    setColumnError("");
 
     const reader = new FileReader();
 
@@ -23,8 +26,20 @@ function App() {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const parsedData = XLSX.utils.sheet_to_json(sheet);
-      setData(parsedData);
-      setEnrichedData([]); // Clear previous data
+
+      if (
+        parsedData.length === 0 ||
+        !parsedData[0].hasOwnProperty(ifscColumnName)
+      ) {
+        setData([]);
+        setColumnError(
+          `❌ Column "${ifscColumnName}" not found in the Excel file.`
+        );
+      } else {
+        setData(parsedData);
+        setColumnError("");
+        setEnrichedData([]);
+      }
     };
 
     reader.readAsBinaryString(file);
@@ -34,7 +49,7 @@ function App() {
     setLoading(true);
     const results = await Promise.all(
       data.map(async (row) => {
-        const ifsc = row["Remitter IFSC"];
+        const ifsc = row[ifscColumnName];
         try {
           const res = await axios.get(`https://ifsc.razorpay.com/${ifsc}`);
           return { ...row, ...res.data };
@@ -67,6 +82,20 @@ function App() {
           IFSC Bank Details Enricher
         </h1>
 
+        {/* IFSC Column Input */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Enter IFSC Column Name
+          </label>
+          <input
+            type="text"
+            value={ifscColumnName}
+            onChange={(e) => setIfscColumnName(e.target.value)}
+            placeholder="e.g., Remitter IFSC"
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
         {/* Upload UI */}
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50 mb-6">
           <FileSpreadsheet className="mx-auto h-10 w-10 text-gray-400 mb-3" />
@@ -97,6 +126,10 @@ function App() {
             </div>
           )}
         </div>
+
+        {columnError && (
+          <div className="mt-3 text-sm text-red-600">{columnError}</div>
+        )}
 
         {/* Action Buttons */}
         {data.length > 0 && (
